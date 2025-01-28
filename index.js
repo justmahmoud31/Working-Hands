@@ -2,6 +2,7 @@ import express from 'express';
 import sequelize from './database/dbconnection.js';
 import userRoutes from './src/modules/user/user.routes.js';
 import requestRoutes from './src/modules/Request/request.routes.js';
+import mainRoutes from './src/modules/Main/main.routes.js';
 import path from 'path';
 
 const app = express();
@@ -14,7 +15,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/requests', requestRoutes);
-
+app.use('/api/main', mainRoutes);
 // Test database connection and start server
 sequelize
   .sync()

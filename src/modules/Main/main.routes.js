@@ -1,0 +1,10 @@
+import express from 'express';
+import mainController from './main.controller.js';
+import upload from '../../middleware/multerConfig.js';
+const router = express.Router();
+router.post('/addmain', upload.array('mainpictures'), mainController.addMainContent);
+router.put("/:id/details", upload.array('mainpictures'), mainController.updateMainContentDetails);
+router.put('/:id/images/:imageId', upload.array('mainpictures'), mainController.updateMainContentImages);
+router.get('/', mainController.getMainContent);
+router.delete('/deletemain/:id', mainController.deleteMainContent);
+export default router;
