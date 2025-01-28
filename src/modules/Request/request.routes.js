@@ -1,7 +1,7 @@
 import express from "express";
 import requestController from "./request.controller.js";
-import upload from "../../middleware/multerConfig.js";
+import { singleFile } from '../../middleware/multerConfig.js'; // Import the new Multer helper function
 const router = express.Router();
-router.post('/addrequest', upload.single('profilepicture'), requestController.addrequest);
+router.post('/addrequest',singleFile('profilepicture', 'requests'), requestController.addrequest);
 router.get('/', requestController.getAllRequests);
 export default router;

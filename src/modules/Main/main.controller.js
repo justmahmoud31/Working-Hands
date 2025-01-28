@@ -1,20 +1,21 @@
-import sequelize from "../../../database/dbconnection.js";
-import Main from "../../../database/Models/main.js"; // Import your Main model
-import MainPictures from "../../../database/Models/MainPictures.js"; // Import MainPictures model
-import { AppError } from "../../utils/AppError.js";
-import removeUnusedFiles from "../../utils/removeUnusedFiles.js";
+import fs from 'fs';
+import path from 'path';
+import Main from '../../../database/Models/main.js'; // Import your Main model
+import MainPictures from '../../../database/Models/MainPictures.js'; // Import MainPictures model
+import { AppError } from '../../utils/AppError.js';
 
 // Add Main Content
 const addMainContent = async (req, res, next) => {
     try {
         const { title, description, pictureTitles } = req.body;
 
-        // Parse pictureTitles as an array
-        const titles = Array.isArray(pictureTitles) ? pictureTitles : JSON.parse(pictureTitles || "[]");
+        const titles = Array.isArray(pictureTitles) ? pictureTitles : JSON.parse(pictureTitles || '[]');
 
-        if (!Array.isArray(titles)) {
-            return next(new AppError("Invalid format: pictureTitles must be a JSON array.", 400));
+        if (!req.files || !req.files.mainpictures) {
+            return next(new AppError('No files uploaded.', 400));
         }
+
+        const files = req.files.mainpictures;
 
         // Create a new Main record
         const newMain = await Main.create({
@@ -22,19 +23,17 @@ const addMainContent = async (req, res, next) => {
             description,
         });
 
-        // Process file uploads and associate them with the Main record
-        const pictures = req.files.map((file, index) => ({
-            title: titles[index] || "Untitled",
-            url: file.path.replace(/\\/g, "/"),
+        const pictures = files.map((file, index) => ({
+            title: titles[index] || 'Untitled',
+            url: file.path.replace(/\\/g, '/'), // Save the file path
             mainId: newMain.id, // Associate with the newly created Main record
         }));
 
-        // Insert picture records into MainPictures table
         await MainPictures.bulkCreate(pictures);
 
         res.status(201).json({
             success: true,
-            message: "Main content added successfully",
+            message: 'Main content added successfully',
             data: newMain,
         });
     } catch (err) {
@@ -42,40 +41,36 @@ const addMainContent = async (req, res, next) => {
     }
 };
 
-// Get Main Content (Including Photos)
+// Get Main Content
 const getMainContent = async (req, res, next) => {
     try {
-        // Fetch all main content records along with associated pictures
         const mainContent = await Main.findAll({
             include: {
                 model: MainPictures,
-                as: 'MainPictures', // Alias for the associated pictures
+                as: 'MainPictures',
             },
         });
 
         res.status(200).json({
-            Message: "Success",
-            mainContent,
+            success: true,
+            data: mainContent,
         });
     } catch (err) {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 };
 
-// Update Main Content (Including Photos)
-// Update Title and Description
+// Update Main Content Details
 const updateMainContentDetails = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { title, description } = req.body;
 
-        // Find the main content by ID
         const mainContent = await Main.findByPk(id);
         if (!mainContent) {
-            return next(new AppError("Main content not found", 404));
+            return next(new AppError('Main content not found', 404));
         }
 
-        // Update the main content's title and description
         await mainContent.update({
             title: title || mainContent.title,
             description: description || mainContent.description,
@@ -83,52 +78,52 @@ const updateMainContentDetails = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: "Main content title and description updated successfully",
+            message: 'Main content updated successfully',
             data: mainContent,
         });
     } catch (err) {
         next(err);
     }
 };
+
 // Update Images and Titles
 const updateMainContentImages = async (req, res, next) => {
     try {
-        const { id, imageId } = req.params; // Get content ID and image ID from the URL params
+        const { id, imageId } = req.params;
         const { pictureTitle } = req.body;
 
-        // Find the main content by ID
         const mainContent = await Main.findByPk(id);
         if (!mainContent) {
-            return next(new AppError("Main content not found", 404));
+            return next(new AppError('Main content not found', 404));
         }
 
-        // Find the image to update by imageId
         const existingImage = await MainPictures.findOne({
-            where: { id: imageId, mainId: mainContent.id },
+            where: { id: imageId, mainId: id },
         });
 
         if (!existingImage) {
-            return next(new AppError("Image not found", 404));
+            return next(new AppError('Image not found', 404));
         }
 
-        // Process the new file upload and title
-        const picture = req.files?.[0]; // Only handle one image per request
+        const picture = req.files?.mainpictures?.[0];
         if (!picture) {
-            return next(new AppError("No image file provided", 400));
+            return next(new AppError('No new image file provided', 400));
+        }
+        // Delete the old image file
+        const uploadDir = 'uploads/main';
+        const oldFilePath = path.join(uploadDir, path.basename(existingImage.url));
+        if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
         }
 
-        // Delete the old image file from the system (only delete the old image related to the imageId)
-        removeUnusedFiles("uploads", [existingImage.url]); // Use the URL of the old image
-
-        // Update the image in the database
         const updatedImage = await existingImage.update({
-            title: pictureTitle || existingImage.title, // Update the title if provided
-            url: picture.path.replace(/\\/g, "/"), // Update the file path
+            title: pictureTitle || existingImage.title,
+            url: picture.path.replace(/\\/g, '/'),
         });
 
         res.status(200).json({
             success: true,
-            message: "Image updated successfully",
+            message: 'Image updated successfully',
             data: updatedImage,
         });
     } catch (err) {
@@ -136,46 +131,46 @@ const updateMainContentImages = async (req, res, next) => {
     }
 };
 
-
-
-// Delete Main Content (Including Associated Pictures)
+// Delete Main Content
 const deleteMainContent = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        // Find the main content by ID
         const mainContent = await Main.findByPk(id);
         if (!mainContent) {
-            return next(new AppError("Main content not found", 404));
+            return next(new AppError('Main content not found', 404));
         }
 
-        // Get associated pictures from MainPictures
         const mainPictures = await MainPictures.findAll({
             where: { mainId: id },
         });
 
-        // Get the file paths associated with the content
-        const filesToDelete = mainPictures.map((pic) => pic.url);
+        const filesToDelete = mainPictures.map((pic) => path.basename(pic.url));
+        const uploadDir = 'uploads/main';
 
-        // Delete associated pictures from MainPictures table
-        await MainPictures.destroy({
-            where: { mainId: id },
+        filesToDelete.forEach((file) => {
+            const filePath = path.join(uploadDir, file);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         });
 
-        // Delete the main content
+        await MainPictures.destroy({ where: { mainId: id } });
         await mainContent.destroy();
-
-        // Optionally remove unused files (if stored on the server)
-        removeUnusedFiles("uploads", filesToDelete);
 
         res.status(200).json({
             success: true,
-            message: "Main content deleted successfully",
+            message: 'Main content and associated images deleted successfully',
         });
     } catch (err) {
         next(err);
     }
 };
 
-
-export default { addMainContent, getMainContent, updateMainContentImages, updateMainContentDetails, deleteMainContent };
+export default {
+    addMainContent,
+    getMainContent,
+    updateMainContentImages,
+    updateMainContentDetails,
+    deleteMainContent,
+};
