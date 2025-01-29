@@ -2,7 +2,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from './../dbconnection.js';
 
-class User extends Model {}
+class User extends Model { }
 User.init(
   {
     username: {
@@ -11,6 +11,10 @@ User.init(
       unique: true,
     },
     fullname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    password: {
       type: DataTypes.STRING,
       allowNull: false,
     },
