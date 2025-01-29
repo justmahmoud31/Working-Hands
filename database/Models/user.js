@@ -71,6 +71,11 @@ User.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    role: {
+      type: DataTypes.STRING, // or DataTypes.ENUM('user', 'admin') if you want predefined roles
+      allowNull: false,
+      defaultValue: 'user', // Default role if not specified
+    },
   },
   { sequelize, modelName: 'User' }
 );
