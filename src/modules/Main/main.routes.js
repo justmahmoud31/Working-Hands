@@ -7,10 +7,9 @@ const router = express.Router();
 
 // Use mixedFiles to handle multiple file uploads
 router.post('/addmain', protect(["admin"]), mixedFiles([{ name: 'mainpictures', maxCount: 10 }], 'main'), mainController.addMainContent);
-router.put('/:id/details', mixedFiles([{ name: 'mainpictures', maxCount: 10 }], 'main'), mainController.updateMainContentDetails);
-router.put('/:id/images/:imageId', mixedFiles([{ name: 'mainpictures', maxCount: 1 }], 'main'), mainController.updateMainContentImages);
-
+router.put('/:id/details', protect(["admin"]), mixedFiles([{ name: 'mainpictures', maxCount: 10 }], 'main'), mainController.updateMainContentDetails);
+router.put('/:id/images/:imageId', protect(["admin"]), mixedFiles([{ name: 'mainpictures', maxCount: 1 }], 'main'), mainController.updateMainContentImages);
 router.get('/', mainController.getMainContent);
-router.delete('/deletemain/:id', mainController.deleteMainContent);
+router.delete('/deletemain/:id', protect(["admin"]), mainController.deleteMainContent);
 
 export default router;
