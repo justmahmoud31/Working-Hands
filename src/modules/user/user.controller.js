@@ -2,6 +2,7 @@ import User from '../../../database/Models/user.js'; // Import your User model
 import { AppError } from '../../utils/AppError.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import Requests from '../../../database/Models/requests.js';
 // Add User
 const addUser = async (req, res, next) => {
   try {
@@ -49,13 +50,13 @@ const getAllUsers = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 };
-const getUsersCount = async (req,res,next)=>{
+const getUsersCount = async (req, res, next) => {
   try {
     const users = await User.findAll();
     const count = users.length;
     res.status(200).json({
-      "Message" : "Success",
-      usersCount : count,
+      "Message": "Success",
+      usersCount: count,
     })
   } catch (err) {
     next(new AppError(`Error: ${err.message}`, 500));
@@ -103,9 +104,15 @@ const loginUser = async (req, res, next) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Find user by email
+    // Check if the user exists in the Requests table
+    const pendingRequest = await Requests.findOne({ where: { email } });
+    if (pendingRequest) {
+      return res.status(403).json({
+        message: 'Your request is under review. Please wait 24-48 hours for approval.'
+      });
+    }
+    // Find user by email in the Users table
     const user = await User.findOne({ where: { email } });
-
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -114,14 +121,14 @@ const loginUser = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid password' });
     }
-    const payload = { id: user.id, role: user.role };
-    console.log('JWT Payload:', payload);
+
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, role: user.role }, // Include user role
-      process.env.JWT_SECRET, // Secret key from .env
-      { expiresIn: '7d' } // Token expires in 7 days
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
     );
+
     res.status(200).json({
       message: 'Login successful',
       token,
@@ -129,7 +136,7 @@ const loginUser = async (req, res, next) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        role: user.role, // Send role in response
+        role: user.role,
       }
     });
 
@@ -137,4 +144,5 @@ const loginUser = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 };
-export default { addUser, getAllUsers, loginUser, getOneUser ,getUsersData,getUsersCount};
+
+export default { addUser, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount };

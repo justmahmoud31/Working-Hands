@@ -5,6 +5,7 @@ import requestRoutes from './src/modules/Request/request.routes.js';
 import mainRoutes from './src/modules/Main/main.routes.js';
 import adsRoutes from './src/modules/Ads/ads.routes.js';
 import labelRoutes from './src/modules/Labels/label.routes.js';
+import editRequestsRoutes from './src/modules/EditRequest/editrequest.routes.js';
 import path from 'path';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/main', mainRoutes);
 app.use('/api/ads', adsRoutes);
 app.use('/api/label', labelRoutes);
+app.use('/api/edits', editRequestsRoutes);
 // Test database connection and start server
 sequelize
   .sync()
