@@ -49,7 +49,51 @@ const getAllUsers = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 };
+const getUsersCount = async (req,res,next)=>{
+  try {
+    const users = await User.findAll();
+    const count = users.length;
+    res.status(200).json({
+      "Message" : "Success",
+      usersCount : count,
+    })
+  } catch (err) {
+    next(new AppError(`Error: ${err.message}`, 500));
+  }
+}
+const getOneUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User Not Found' });
+    }
+    res.status(200).json({
+      "Message": "Succes",
+      user
+    })
+  } catch (err) {
+    next(new AppError(`Error: ${err.message}`, 500));
+  }
+}
+const getUsersData = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findOne({ where: { id: userId } });
 
+    if (!user) {
+      return next(new AppError('User not found', 404)); // Return 404 if the user doesn't exist
+    }
+
+    // Return the user data (excluding sensitive information)
+    res.status(200).json({
+      message: 'User data retrieved successfully',
+      user
+    });
+  } catch (err) {
+    next(new AppError(`Error: ${err.message}`, 500));
+  }
+}
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -93,4 +137,4 @@ const loginUser = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 };
-export default { addUser, getAllUsers, loginUser };
+export default { addUser, getAllUsers, loginUser, getOneUser ,getUsersData,getUsersCount};

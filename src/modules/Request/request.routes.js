@@ -7,4 +7,5 @@ router.post('/addrequest', singleFile('profilepicture', 'requests'), requestCont
 router.post('/accept/:id', protect(['admin']), requestController.acceptUser);
 router.post('/reject/:id', protect(['admin']), requestController.rejectUser);
 router.get('/',protect(['admin']), requestController.getAllRequests);
+router.get('/requestcount',protect(['admin']), requestController.requestsCount);
 export default router;

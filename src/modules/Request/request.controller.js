@@ -134,4 +134,16 @@ const rejectUser = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 };
-export default { addrequest, getAllRequests, acceptUser , rejectUser};
+const requestsCount = async (req, res, next) => {
+    try {
+        const requests = await Requests.findAll();
+        const count = requests.length
+        res.status(200).json({
+            "Message": "Success",
+            count
+        })
+    } catch (err) {
+        next(new AppError(`Error: ${err.message}`, 500));
+    }
+}
+export default { addrequest, getAllRequests, acceptUser, rejectUser , requestsCount };
