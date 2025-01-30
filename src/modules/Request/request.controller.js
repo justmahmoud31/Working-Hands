@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import Requests from "../../../database/Models/requests.js";
 import User from "../../../database/Models/user.js";
 import { AppError } from "../../utils/AppError.js";
@@ -56,24 +57,28 @@ const acceptUser = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        // Find request by ID
+        // Find the request by ID
         const request = await Requests.findByPk(id);
         if (!request) {
             return res.status(404).json({ message: 'Request not found' });
         }
 
-        // Fix profile picture paths
-        const oldPath = path.join(process.cwd(), request.profilepicture); // Absolute path to the file
-        const newDir = path.join(process.cwd(), 'uploads', 'users'); // Ensure this folder exists
-        const newPath = path.join(newDir, path.basename(request.profilepicture));
+        // Check if the username, email, or private number already exists
+        const existingUser = await User.findOne({
+            where: {
+                [Op.or]: [
+                    { email: request.email },
+                    { username: request.username },
+                    { privatenumber: request.privatenumber }
+                ]
+            }
+        });
 
-        // Ensure the new directory exists
-        await fs.mkdir(newDir, { recursive: true });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User with this email, username, or private number already exists' });
+        }
 
-        // Move the profile picture from "requests" to "users" folder
-        await fs.rename(oldPath, newPath);
-
-        // Create a new user with request data
+        // **Create the user first**
         const user = await User.create({
             username: request.username,
             fullname: request.fullname,
@@ -81,17 +86,37 @@ const acceptUser = async (req, res, next) => {
             privatenumber: request.privatenumber,
             password: request.password,
             phonenumber: request.phonenumber,
-            height: request.height,
-            weight: request.weight,
+            height: request.height || null, 
+            weight: request.weight || null,
             birthdate: request.birthdate,
             jobtitle: request.jobtitle,
             livesin: request.livesin,
             fathernumber: request.fathernumber || null,
             brothernumber: request.brothernumber || null,
-            profilepicture: `/uploads/users/${path.basename(request.profilepicture)}`, // New image path
+            profilepicture: '', // Temporary value, will be updated after file move
+            role: 'user' // Default role if missing
         });
 
-        // Remove request after successful user creation
+        // **Now move the file**
+        if (request.profilepicture) {
+            const oldPath = path.join(process.cwd(), request.profilepicture);
+            const newDir = path.join(process.cwd(), 'uploads', 'users');
+            const newPath = path.join(newDir, path.basename(request.profilepicture));
+
+            // Ensure the new directory exists
+            await fs.mkdir(newDir, { recursive: true });
+
+            try {
+                await fs.rename(oldPath, newPath);
+                // **Update the user record with the new image path**
+                await user.update({ profilepicture: `/uploads/users/${path.basename(request.profilepicture)}` });
+            } catch (error) {
+                console.error('Error moving file:', error);
+                return res.status(500).json({ message: 'Error moving profile picture, but user was created' });
+            }
+        }
+
+        // **Delete request only if everything is successful**
         await request.destroy();
 
         res.status(201).json({
@@ -102,8 +127,7 @@ const acceptUser = async (req, res, next) => {
     } catch (err) {
         next(new AppError(`Error: ${err.message}`, 500));
     }
-};
-const rejectUser = async (req, res, next) => {
+};const rejectUser = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -146,4 +170,4 @@ const requestsCount = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 }
-export default { addrequest, getAllRequests, acceptUser, rejectUser , requestsCount };
+export default { addrequest, getAllRequests, acceptUser, rejectUser, requestsCount };

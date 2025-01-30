@@ -7,10 +7,10 @@ import adsRoutes from './src/modules/Ads/ads.routes.js';
 import labelRoutes from './src/modules/Labels/label.routes.js';
 import editRequestsRoutes from './src/modules/EditRequest/editrequest.routes.js';
 import path from 'path';
-
+import cors from 'cors';
 const app = express();
 const port = 3000;
-
+app.use(cors());
 // Middleware for parsing JSON and serving static files
 app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
