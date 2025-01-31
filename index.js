@@ -23,6 +23,18 @@ app.use('/api/ads', adsRoutes);
 app.use('/api/label', labelRoutes);
 app.use('/api/edits', editRequestsRoutes);
 // Test database connection and start server
+app.use((err, req, res, next) => {
+  console.error('Error:', err); // Logs the error for debugging
+
+  // Set status code (default to 500 if not set)
+  const statusCode = err.statusCode || 500;
+
+  res.status(statusCode).json({
+    status: err.status || 'error',
+    message: err.message || 'Something went wrong!',
+  });
+});
+
 sequelize
   .sync()
   .then(() => {

@@ -57,13 +57,13 @@ const acceptUser = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        // Find the request by ID
+        // 1️⃣ **Find the request by ID**
         const request = await Requests.findByPk(id);
         if (!request) {
             return res.status(404).json({ message: 'Request not found' });
         }
 
-        // Check if the username, email, or private number already exists
+        // 2️⃣ **Check if the user already exists**
         const existingUser = await User.findOne({
             where: {
                 [Op.or]: [
@@ -78,7 +78,31 @@ const acceptUser = async (req, res, next) => {
             return res.status(400).json({ message: 'User with this email, username, or private number already exists' });
         }
 
-        // **Create the user first**
+        // 3️⃣ **Move Profile Picture (If Exists)**
+        let newProfilePath = ''; // Default empty value
+
+        if (request.profilepicture) {
+            const oldPath = path.join(process.cwd(), 'uploads', 'requests', path.basename(request.profilepicture)); // Ensure correct path
+            const newDir = path.join(process.cwd(), 'uploads', 'users');
+            const newPath = path.join(newDir, path.basename(request.profilepicture));
+
+            try {
+                // Ensure `users` directory exists
+                await fs.mkdir(newDir, { recursive: true });
+
+                // Move the file
+                await fs.rename(oldPath, newPath);
+
+                // Update new profile picture path
+                newProfilePath = `/uploads/users/${path.basename(request.profilepicture)}`;
+            } catch (error) {
+                console.error('🚨 Error moving file:', error);
+                return res.status(500).json({ message: 'Error moving profile picture, but user was created' });
+            }
+        }
+       
+
+        // 4️⃣ **Create the new user**
         const user = await User.create({
             username: request.username,
             fullname: request.fullname,
@@ -86,37 +110,18 @@ const acceptUser = async (req, res, next) => {
             privatenumber: request.privatenumber,
             password: request.password,
             phonenumber: request.phonenumber,
-            height: request.height || null, 
+            height: request.height || null,
             weight: request.weight || null,
             birthdate: request.birthdate,
             jobtitle: request.jobtitle,
             livesin: request.livesin,
             fathernumber: request.fathernumber || null,
             brothernumber: request.brothernumber || null,
-            profilepicture: '', // Temporary value, will be updated after file move
-            role: 'user' // Default role if missing
+            profilepicture: newProfilePath, // Assign new profile picture path
+            role: 'user'
         });
 
-        // **Now move the file**
-        if (request.profilepicture) {
-            const oldPath = path.join(process.cwd(), request.profilepicture);
-            const newDir = path.join(process.cwd(), 'uploads', 'users');
-            const newPath = path.join(newDir, path.basename(request.profilepicture));
-
-            // Ensure the new directory exists
-            await fs.mkdir(newDir, { recursive: true });
-
-            try {
-                await fs.rename(oldPath, newPath);
-                // **Update the user record with the new image path**
-                await user.update({ profilepicture: `/uploads/users/${path.basename(request.profilepicture)}` });
-            } catch (error) {
-                console.error('Error moving file:', error);
-                return res.status(500).json({ message: 'Error moving profile picture, but user was created' });
-            }
-        }
-
-        // **Delete request only if everything is successful**
+        // 5️⃣ **Delete the request only if everything is successful**
         await request.destroy();
 
         res.status(201).json({
@@ -127,7 +132,10 @@ const acceptUser = async (req, res, next) => {
     } catch (err) {
         next(new AppError(`Error: ${err.message}`, 500));
     }
-};const rejectUser = async (req, res, next) => {
+};
+
+
+const rejectUser = async (req, res, next) => {
     try {
         const { id } = req.params;
 
