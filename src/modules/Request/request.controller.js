@@ -100,8 +100,6 @@ const acceptUser = async (req, res, next) => {
                 return res.status(500).json({ message: 'Error moving profile picture, but user was created' });
             }
         }
-       
-
         // 4️⃣ **Create the new user**
         const user = await User.create({
             username: request.username,

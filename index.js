@@ -6,11 +6,14 @@ import mainRoutes from './src/modules/Main/main.routes.js';
 import adsRoutes from './src/modules/Ads/ads.routes.js';
 import labelRoutes from './src/modules/Labels/label.routes.js';
 import editRequestsRoutes from './src/modules/EditRequest/editrequest.routes.js';
+import codeRoutes from './src/modules/Code/code.routes.js';
 import path from 'path';
 import cors from 'cors';
 const app = express();
 const port = 3000;
 app.use(cors());
+app.use(express.json({ limit: "50mb" })); // Adjust as needed
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Middleware for parsing JSON and serving static files
 app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -22,6 +25,7 @@ app.use('/api/main', mainRoutes);
 app.use('/api/ads', adsRoutes);
 app.use('/api/label', labelRoutes);
 app.use('/api/edits', editRequestsRoutes);
+app.use('/api/code', codeRoutes);
 // Test database connection and start server
 app.use((err, req, res, next) => {
   console.error('Error:', err); // Logs the error for debugging

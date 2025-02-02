@@ -144,5 +144,19 @@ const loginUser = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 };
-
-export default { addUser, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount };
+const searchOnUser = async (req, res, next) => {
+  try {
+    const { privatenumber } = req.body;
+    const user = await User.findOne({ where: { privatenumber } });
+    if (!user) {
+      next(new AppError("User Not Found", 404));
+    }
+    res.status(200).json({
+      "Message": "User Found Successfully",
+      user
+    })
+  } catch (err) {
+    next(new AppError(`Error: ${err.message}`, 500));
+  }
+}
+export default { addUser, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount, searchOnUser };
