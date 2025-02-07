@@ -5,7 +5,10 @@ import { AppError } from '../../utils/AppError.js';
 const getLabels = async (req, res, next) => {
     try {
         const labels = await Label.findAll();
-        res.status(200).json(labels);
+        res.status(200).json({
+            message: "Success",
+            labels
+        });
     } catch (err) {
         next(new AppError(`Error: ${err.message}`, 500));
     }
@@ -34,7 +37,7 @@ const updateLabels = async (req, res, next) => {
 
         // Find the label by its ID
         const label = await Label.findByPk(id);
-        
+
         if (!label) {
             return next(new AppError('Label not found', 404)); // Return 404 if label doesn't exist
         }

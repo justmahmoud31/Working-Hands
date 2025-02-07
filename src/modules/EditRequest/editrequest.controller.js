@@ -5,28 +5,20 @@ import { AppError } from "../../utils/AppError.js";
 
 const addEditRequest = async (req, res, next) => {
     try {
-        const userId = req.user.id;
-        const { fullname, livesin, status } = req.body;
-        const profilepicture = req.file ? `/uploads/users/${req.file.filename}` : null;
+        const userId = req.user.id; // Get user ID from token
+        const { fullname, livesin, ...otherFields } = req.body;
 
-        console.log("Uploaded File: ", req.file);
-        console.log("Request Body: ", req.body);
-
-        if (!fullname && !livesin && !profilepicture && !status) {
+        // If no changes are requested
+        if (!fullname && !livesin && Object.keys(otherFields).length === 0) {
             return res.status(400).json({ message: "No changes requested" });
         }
 
-        // Update the user if profile picture exists
-        if (profilepicture) {
-            await User.update({ profilepicture }, { where: { id: userId } });
+        // Update other fields directly (except fullname & livesin)
+        if (Object.keys(otherFields).length > 0) {
+            await User.update(otherFields, { where: { id: userId } });
         }
 
-        // Update status if provided
-        if (status) {
-            await User.update({ status }, { where: { id: userId } });
-        }
-
-        // If fullname or livesin is changing, create an approval request
+        // If fullname or livesin is changing, add an admin approval request
         if (fullname || livesin) {
             const request = await EditRequests.create({
                 userId,
