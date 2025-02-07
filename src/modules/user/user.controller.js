@@ -258,7 +258,7 @@ export const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({
       where: {
-        [Op.or]: [{ email: identifier }, { username: identifier }, { privateNumber: identifier }],
+        [Op.or]: [{ email: identifier }, { username: identifier }, { privatenumber: identifier }],
       },
     });
 
