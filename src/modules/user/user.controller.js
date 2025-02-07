@@ -207,7 +207,7 @@ const loginUser = async (req, res, next) => {
   }
 };
 export const logoutUser = async (req, res) => {
-  const { userId } = req.body;
+  const userId = req.user.id;
   try {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });

@@ -13,7 +13,7 @@ router.get('/getuser/:id', protect(['admin']), userController.getOneUser);
 router.get('/getuserscount', protect(['admin']), userController.getUsersCount);
 router.get('/getme', protect(['user', 'admin']), userController.getUsersData);
 router.post('/login', userController.loginUser);
-router.post('/logout', userController.logoutUser);
+router.post('/logout', protect(["admin"]), userController.logoutUser);
 router.post('/addadmin', protect(["admin"]), userController.addAdmin);
 router.get('/getadmins', protect(['admin']), userController.getAllAdmins);
 export default router;
