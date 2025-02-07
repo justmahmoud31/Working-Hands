@@ -10,6 +10,10 @@ User.init(
       allowNull: false,
       unique: true,
     },
+    profilepicture: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     fullname: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -67,9 +71,10 @@ User.init(
       allowNull: true,
       unique: true,
     },
-    profilepicture: {
-      type: DataTypes.STRING,
+    statusmode: {
+      type: DataTypes.ENUM("online", "offline"),
       allowNull: false,
+      defaultValue: "offline",
     },
     role: {
       type: DataTypes.STRING, // or DataTypes.ENUM('user', 'admin') if you want predefined roles

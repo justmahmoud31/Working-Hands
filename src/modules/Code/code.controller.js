@@ -39,6 +39,7 @@ const editNumberOfCodes = async (req, res, next) => {
         }
 
         code.stock = newStock;
+        code.used = 0;
         await code.save();
 
         res.status(200).json({ message: "Success", updatedCode: code });

@@ -7,7 +7,6 @@ import Requests from '../../../database/Models/requests.js';
 const addUser = async (req, res, next) => {
   try {
     const { body, file } = req;
-
     if (!file) {
       throw new Error('Profile picture is required');
     }
@@ -38,6 +37,7 @@ const getAllUsers = async (req, res, next) => {
     const { count, rows: users } = await User.findAndCountAll({
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
+      where: { role: "user" }
     });
 
     res.status(200).json({
@@ -52,7 +52,7 @@ const getAllUsers = async (req, res, next) => {
 };
 const getUsersCount = async (req, res, next) => {
   try {
-    const users = await User.findAll();
+    const users = await User.findAll({ where: { role: "user" } });
     const count = users.length;
     res.status(200).json({
       "Message": "Success",
@@ -62,6 +62,68 @@ const getUsersCount = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 }
+export const addAdmin = async (req, res) => {
+  try {
+    const {
+      username,
+      email,
+      password,
+      fullname,
+      privatenumber,
+      phonenumber,
+      height,
+      weight,
+      birthdate,
+      jobtitle,
+      livesin,
+      fathernumber,
+      brothernumber,
+    } = req.body;
+
+    // Validate required fields
+    if (
+      !username ||
+      !email ||
+      !password ||
+      !fullname ||
+      !privatenumber ||
+      !phonenumber ||
+      !height ||
+      !birthdate ||
+      !jobtitle ||
+      !livesin
+    ) {
+      return res.status(400).json({ error: "All required fields must be provided." });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create the new admin
+    const newAdmin = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+      fullname,
+      privatenumber,
+      phonenumber,
+      height,
+      weight: weight || null, // Allow null
+      birthdate,
+      jobtitle,
+      livesin,
+      fathernumber: fathernumber || null, // Allow null
+      brothernumber: brothernumber || null, // Allow null
+      role: "admin",
+      modestatus: "offline",
+    });
+
+    res.json({ message: "Admin added successfully", admin: newAdmin });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const getOneUser = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -114,12 +176,12 @@ const loginUser = async (req, res, next) => {
     // Find user by email in the Users table
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'البريد الالكتروني او الرمز غير صحيح' });
     }
     // Compare hashed password with user input
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid password' });
+      return res.status(401).json({ message: 'البريد الالكتروني او الرمز غير صحيح' });
     }
 
     // Generate JWT token
@@ -128,7 +190,7 @@ const loginUser = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-
+    await user.update({ statusmode: "online" });
     res.status(200).json({
       message: 'Login successful',
       token,
@@ -144,6 +206,21 @@ const loginUser = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 };
+export const logoutUser = async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Update status to offline
+    await user.update({ statusmode: "offline" });
+
+    res.json({ message: "Logout successful" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const searchOnUser = async (req, res, next) => {
   try {
     const { privatenumber } = req.body;
@@ -159,4 +236,16 @@ const searchOnUser = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 }
-export default { addUser, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount, searchOnUser };
+export const getAllAdmins = async (req, res) => {
+  try {
+    const admins = await User.findAll({ where: { role: "admin" } });
+    res.status(200).json({
+      "Message": "Success",
+      admins
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export default { addUser, getAllAdmins, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount, searchOnUser, logoutUser, addAdmin };

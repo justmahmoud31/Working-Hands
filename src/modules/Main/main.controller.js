@@ -105,20 +105,25 @@ const updateMainContentImages = async (req, res, next) => {
             return next(new AppError('Image not found', 404));
         }
 
+        // Handle image file
+        let newImageUrl = existingImage.url;
         const picture = req.files?.mainpictures?.[0];
-        if (!picture) {
-            return next(new AppError('No new image file provided', 400));
-        }
-        // Delete the old image file
-        const uploadDir = 'uploads/main';
-        const oldFilePath = path.join(uploadDir, path.basename(existingImage.url));
-        if (fs.existsSync(oldFilePath)) {
-            fs.unlinkSync(oldFilePath);
+
+        if (picture) {
+            // Delete the old image file if a new one is provided
+            const uploadDir = 'uploads/main';
+            const oldFilePath = path.join(uploadDir, path.basename(existingImage.url));
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlinkSync(oldFilePath);
+            }
+
+            newImageUrl = picture.path.replace(/\\/g, '/');
         }
 
+        // Update the image record with the new title or image URL
         const updatedImage = await existingImage.update({
             title: pictureTitle || existingImage.title,
-            url: picture.path.replace(/\\/g, '/'),
+            url: newImageUrl,
         });
 
         res.status(200).json({
@@ -130,6 +135,7 @@ const updateMainContentImages = async (req, res, next) => {
         next(err);
     }
 };
+
 
 // Delete Main Content
 const deleteMainContent = async (req, res, next) => {

@@ -12,7 +12,7 @@ import cors from 'cors';
 const app = express();
 const port = 3000;
 app.use(cors());
-app.use(express.json({ limit: "50mb" })); // Adjust as needed
+app.use(express.json({ limit: "100mb" })); // Adjust as needed
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Middleware for parsing JSON and serving static files
 app.use(express.json());

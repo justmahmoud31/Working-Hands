@@ -1,23 +1,32 @@
+import sequelize from "../../../database/dbconnection.js";
 import EditRequests from "../../../database/Models/editRequests.js";
 import User from "../../../database/Models/user.js";
 import { AppError } from "../../utils/AppError.js";
 
 const addEditRequest = async (req, res, next) => {
     try {
-        const userId = req.user.id; // Get user ID from token
-        const { fullname, livesin, ...otherFields } = req.body;
+        const userId = req.user.id;
+        const { fullname, livesin, status } = req.body;
+        const profilepicture = req.file ? `/uploads/users/${req.file.filename}` : null;
 
-        // If no changes are requested
-        if (!fullname && !livesin && Object.keys(otherFields).length === 0) {
+        console.log("Uploaded File: ", req.file);
+        console.log("Request Body: ", req.body);
+
+        if (!fullname && !livesin && !profilepicture && !status) {
             return res.status(400).json({ message: "No changes requested" });
         }
 
-        // Update other fields directly (except fullname & livesin)
-        if (Object.keys(otherFields).length > 0) {
-            await User.update(otherFields, { where: { id: userId } });
+        // Update the user if profile picture exists
+        if (profilepicture) {
+            await User.update({ profilepicture }, { where: { id: userId } });
         }
 
-        // If fullname or livesin is changing, add an admin approval request
+        // Update status if provided
+        if (status) {
+            await User.update({ status }, { where: { id: userId } });
+        }
+
+        // If fullname or livesin is changing, create an approval request
         if (fullname || livesin) {
             const request = await EditRequests.create({
                 userId,
@@ -37,11 +46,12 @@ const addEditRequest = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 };
+
 const getAllEditRequests = async (req, res, next) => {
     try {
         const requests = await EditRequests.findAll({
             where: { status: "pending" },
-            include: { model: User, as: "user", attributes: ["id", "username", "email"] },
+            include: { model: User, as: "user", attributes: ["id", "fullname", "livesin", "profilepicture", "privatenumber", "phonenumber"] },
         });
 
         res.status(200).json({ message: "Success", requests });
@@ -67,7 +77,6 @@ const acceptEditRequest = async (req, res, next) => {
 
         // Delete request after updating the user
         await request.destroy({ transaction });
-
         await transaction.commit(); // Commit transaction
 
         res.status(200).json({ message: "Request approved, profile updated and removed from requests" });
@@ -94,5 +103,16 @@ const rejectEditRequest = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 };
-
-export default { getAllEditRequests, addEditRequest, acceptEditRequest, rejectEditRequest };      
+const getEditRequestsCount = async (req, res, next) => {
+    try {
+        const editRequests = await EditRequests.findAll({ where: { status: "pending" }, });
+        const count = editRequests.length;
+        res.status(200).json({
+            "Message": "Success",
+            count
+        })
+    } catch (err) {
+        next(new AppError(`Error: ${err.message}`, 500));
+    }
+}
+export default { getAllEditRequests, addEditRequest, acceptEditRequest, rejectEditRequest, getEditRequestsCount };      
