@@ -2,7 +2,9 @@ import User from '../../../database/Models/user.js'; // Import your User model
 import { AppError } from '../../utils/AppError.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { Op } from "sequelize";
 import Requests from '../../../database/Models/requests.js';
+import sendEmail from "../../utils/sendEmail.js";
 // Add User
 const addUser = async (req, res, next) => {
   try {
@@ -247,5 +249,79 @@ export const getAllAdmins = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-export default { addUser, getAllAdmins, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount, searchOnUser, logoutUser, addAdmin };
+// 🟢 1️⃣ Request Password Reset
+export const forgotPassword = async (req, res) => {
+  const { identifier } = req.body; // Can be email, username, or private number
+
+  try {
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [{ email: identifier }, { username: identifier }, { privateNumber: identifier }],
+      },
+    });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Generate OTP and expiration time (10 minutes)
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Save OTP in the database
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
+
+    // Send OTP via email
+    await sendEmail(
+      user.email,
+      "إعادة تعيين كلمة المرور - كود التحقق",
+      `عزيزي ${user.username},
+    
+    لقد تلقينا طلبًا لإعادة تعيين كلمة المرور لحسابك. 
+    يرجى استخدام رمز التحقق التالي لإكمال عملية إعادة التعيين:
+    
+    🔹 **رمز التحقق (OTP):** ${otp}
+    
+    يُرجى إدخال هذا الرمز خلال **10 دقائق**، وإلا فسيكون غير صالح.
+    
+    إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني.
+    
+    مع تحياتنا،  
+    فريق الدعم`
+    );
+
+
+    res.json({ message: "OTP sent to your email" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// 🟢 2️⃣ Verify OTP and Reset Password
+export const resetPassword = async (req, res) => {
+  const { otp, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ where: { otp } });
+
+    if (!user || new Date() > new Date(user.otpExpires)) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear OTP
+    user.password = hashedPassword;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+export default { addUser, getAllAdmins, forgotPassword, resetPassword, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount, searchOnUser, logoutUser, addAdmin };

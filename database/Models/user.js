@@ -81,6 +81,14 @@ User.init(
       allowNull: false,
       defaultValue: 'user', // Default role if not specified
     },
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    otpExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
   },
   { sequelize, modelName: 'User' }
 );
