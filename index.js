@@ -7,6 +7,7 @@ import adsRoutes from './src/modules/Ads/ads.routes.js';
 import labelRoutes from './src/modules/Labels/label.routes.js';
 import editRequestsRoutes from './src/modules/EditRequest/editrequest.routes.js';
 import codeRoutes from './src/modules/Code/code.routes.js';
+import articleRoutes from './src/modules/Articls/articls.routes.js';
 import path from 'path';
 import cors from 'cors';
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/ads', adsRoutes);
 app.use('/api/label', labelRoutes);
 app.use('/api/edits', editRequestsRoutes);
 app.use('/api/code', codeRoutes);
+app.use('/api/article', articleRoutes);
 // Test database connection and start server
 app.use((err, req, res, next) => {
   console.error('Error:', err); // Logs the error for debugging

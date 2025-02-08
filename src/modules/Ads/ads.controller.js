@@ -63,9 +63,9 @@ const editAd = async (req, res, next) => {
             throw new AppError('Ad not found', 404);
         }
 
-        let oldPhotoPath = adImage.photo ? path.join(process.cwd(),adImage.photo) : null;
-   
-        
+        let oldPhotoPath = adImage.photo ? path.join(process.cwd(), adImage.photo) : null;
+
+
         // If a new photo is uploaded, delete the old one
         if (req.file) {
             if (oldPhotoPath && fs.existsSync(oldPhotoPath)) {
@@ -97,29 +97,44 @@ const editAd = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 };
+const getOneAdd = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const ad = await AdImages.findByPk(id);
+        if (!ad) {
+            next(new AppError("Ad Not Found", 404));
+        }
+        res.status(200).json({
+            "Message": "Succes",
+            ad
+        })
+    } catch (err) {
+        next(new AppError(`Error: ${err.message}`, 500));
+    }
+}
 const deleteAd = async (req, res, next) => {
     try {
-      const { id } = req.params;
-  
-      const adImage = await AdImages.findByPk(id);
-      if (!adImage) {
-        throw new AppError('Ad not found', 404);
-      }
-  
-      let photoPath = adImage.photo ? path.join(process.cwd(),adImage.photo) : null;
-  
-      // Delete the photo file from storage
-      if (photoPath && fs.existsSync(photoPath)) {
-        fs.unlinkSync(photoPath);
-      }
-  
-      await adImage.destroy();
-  
-      res.status(200).json({
-        message: 'Ad deleted successfully',
-      });
+        const { id } = req.params;
+
+        const adImage = await AdImages.findByPk(id);
+        if (!adImage) {
+            throw new AppError('Ad not found', 404);
+        }
+
+        let photoPath = adImage.photo ? path.join(process.cwd(), adImage.photo) : null;
+
+        // Delete the photo file from storage
+        if (photoPath && fs.existsSync(photoPath)) {
+            fs.unlinkSync(photoPath);
+        }
+
+        await adImage.destroy();
+
+        res.status(200).json({
+            message: 'Ad deleted successfully',
+        });
     } catch (err) {
-      next(new AppError(`Error: ${err.message}`, 500));
+        next(new AppError(`Error: ${err.message}`, 500));
     }
-  };
-export default { addAd, getAds ,editAd,deleteAd};
+};
+export default { addAd, getAds, editAd, deleteAd, getOneAdd };

@@ -1,11 +1,11 @@
 import express from "express";
 import requestController from "./request.controller.js";
-import { singleFile } from '../../middleware/multerConfig.js'; 
+import { singleFile } from '../../middleware/multerConfig.js';
 import protect from "../../middleware/protectedRoutes.js";
 const router = express.Router();
 router.post('/addrequest', singleFile('profilepicture', 'requests'), requestController.addrequest);
-router.post('/accept/:id', protect(['admin']), requestController.acceptUser);
-router.post('/reject/:id', protect(['admin']), requestController.rejectUser);
-router.get('/',protect(['admin']), requestController.getAllRequests);
-router.get('/requestcount',protect(['admin']), requestController.requestsCount);
+router.post('/accept/:id', protect(['admin', 'subadmin']), requestController.acceptUser);
+router.post('/reject/:id', protect(['admin', 'subadmin']), requestController.rejectUser);
+router.get('/', protect(['admin', 'subadmin']), requestController.getAllRequests);
+router.get('/requestcount', protect(['admin', 'subadmin']), requestController.requestsCount);
 export default router;

@@ -14,8 +14,6 @@ const protect = (roles = []) => {
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = decoded;
-            console.log(decoded.role);
-            
             // Check if the user has the required role
             if (roles.length && !roles.includes(decoded.role)) {
                 throw new AppError('Access denied. Insufficient permissions.', 403);

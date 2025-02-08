@@ -6,8 +6,9 @@ import { singleFile } from '../../middleware/multerConfig.js';
 const router = express.Router();
 
 router.post('/addad', protect(['admin']), singleFile('photos', "ads"), adsController.addAd);
-router.put('/editad/:id', protect(['admin']), singleFile('photos', "ads"), adsController.editAd);
 router.get('/', adsController.getAds);
-router.delete('/deletead/:id',protect(["admin"]), adsController.deleteAd);
+router.put('/editad/:id', protect(['admin']), singleFile('photos', "ads"), adsController.editAd);
+router.get('/onead/:id', protect(["admin"]), adsController.getOneAdd);
+router.delete('/deletead/:id', protect(["admin"]), adsController.deleteAd);
 
 export default router;
