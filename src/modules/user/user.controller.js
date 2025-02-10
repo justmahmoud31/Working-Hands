@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import { Op } from "sequelize";
 import Requests from '../../../database/Models/requests.js';
 import sendEmail from "../../utils/sendEmail.js";
+import qr from "qr-image";
 // Add User
 const addUser = async (req, res, next) => {
   try {
@@ -116,7 +117,7 @@ export const addAdmin = async (req, res) => {
       livesin,
       fathernumber: fathernumber || null, // Allow null
       brothernumber: brothernumber || null, // Allow null
-      role: "admin",
+      role: "subadmin",
       modestatus: "offline",
     });
 
@@ -240,7 +241,13 @@ const searchOnUser = async (req, res, next) => {
 }
 export const getAllAdmins = async (req, res) => {
   try {
-    const admins = await User.findAll({ where: { role: "admin" } });
+    const admins = await User.findAll({
+      where: {
+        role: {
+          [Op.or]: ["admin", "subadmin"]
+        }
+      }
+    });
     res.status(200).json({
       "Message": "Success",
       admins
@@ -324,4 +331,79 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-export default { addUser, getAllAdmins, forgotPassword, resetPassword, getAllUsers, loginUser, getOneUser, getUsersData, getUsersCount, searchOnUser, logoutUser, addAdmin };
+const generateQRCode = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+
+    // Fetch user to ensure they exist
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate a JWT token for the user
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    // Generate QR code with the token
+    const qrCode = qr.imageSync(token, { type: "png" });
+
+    res.set("Content-Type", "image/png");
+    res.send(qrCode);
+  } catch (error) {
+    console.error("Error generating QR code:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get user details by scanning QR code
+const getUserByQRCode = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      user
+    });
+  } catch (error) {
+
+
+    res.status(401).json({ message: "Invalid or expired QR code", error });
+  }
+};
+const deleteAdmin = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const admin = await User.findByPk(id);
+    await admin.destroy();
+    res.status(201).json({
+      "Message": "Deleted"
+    })
+  } catch (err) {
+    next(new AppError(`Error: ${err.message}`, 500));
+  }
+}
+export default {
+  addUser,
+  getAllAdmins,
+  forgotPassword,
+  resetPassword,
+  getAllUsers,
+  loginUser,
+  getOneUser,
+  getUsersData,
+  getUsersCount,
+  searchOnUser,
+  logoutUser,
+  addAdmin,
+  generateQRCode,
+  getUserByQRCode,
+  deleteAdmin
+};
