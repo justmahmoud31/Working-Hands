@@ -15,6 +15,8 @@ router.get('/getme', protect(['user', 'admin', 'subadmin']), userController.getU
 router.post('/login', userController.loginUser);
 router.post('/forgotpassword', userController.forgotPassword);
 router.post('/resetpassword', userController.resetPassword);
+router.post('/checkemailusername', userController.checkUserEmailUsername);
+router.post('/checkphoneprivate', userController.checkPhonePrivateNumbers);
 router.post('/logout', protect(["admin", "subadmin"]), userController.logoutUser);
 router.post('/addadmin', protect(["admin"]), userController.addAdmin);
 router.get('/getadmins', protect(['admin']), userController.getAllAdmins);

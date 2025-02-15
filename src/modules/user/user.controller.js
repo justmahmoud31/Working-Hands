@@ -390,6 +390,76 @@ const deleteAdmin = async (req, res, next) => {
     next(new AppError(`Error: ${err.message}`, 500));
   }
 }
+const checkUserEmailUsername = async (req, res, next) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email && !username) {
+      return res.status(400).json({ message: 'Email or username is required' });
+    }
+
+    // Check if email exists in User or Request table
+    if (email) {
+      const emailExistsInUser = await User.findOne({ where: { email } });
+      const emailExistsInRequest = await Requests.findOne({ where: { email } });
+
+      if (emailExistsInUser || emailExistsInRequest) {
+        return res.status(400).json({ exists: true, message: 'Email already exists' });
+      }
+    }
+
+    // Check if username exists in User or Request table
+    if (username) {
+      const usernameExistsInUser = await User.findOne({ where: { username } });
+      const usernameExistsInRequest = await Requests.findOne({ where: { username } });
+
+      if (usernameExistsInUser || usernameExistsInRequest) {
+        return res.status(400).json({ exists: true, message: 'Username already exists' });
+      }
+    }
+
+    return res.status(200).json({ exists: false, message: 'Email and username are available' });
+  } catch (error) {
+    console.error('Error checking email/username:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Check if private number or phone number exists
+const checkPhonePrivateNumbers = async (req, res, next) => {
+  try {
+    const { privatenumber, phonenumber } = req.body;
+
+    if (!privatenumber && !phonenumber) {
+      return res.status(400).json({ message: 'Private number or phone number is required' });
+    }
+
+    // Check if phone number exists in User or Request table
+    if (phonenumber) {
+      const phoneExistsInUser = await User.findOne({ where: { phonenumber } });
+      const phoneExistsInRequest = await Requests.findOne({ where: { phonenumber } });
+
+      if (phoneExistsInUser || phoneExistsInRequest) {
+        return res.status(400).json({ exists: true, message: 'Phone number already exists' });
+      }
+    }
+
+    // Check if private number exists in User or Request table
+    if (privatenumber) {
+      const privateNumberExistsInUser = await User.findOne({ where: { privatenumber } });
+      const privateNumberExistsInRequest = await Requests.findOne({ where: { privatenumber } });
+
+      if (privateNumberExistsInUser || privateNumberExistsInRequest) {
+        return res.status(400).json({ exists: true, message: 'Private number already exists' });
+      }
+    }
+
+    return res.status(200).json({ exists: false, message: 'Phone number and private number are available' });
+  } catch (error) {
+    console.error('Error checking private/phone number:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
 export default {
   addUser,
   getAllAdmins,
@@ -405,5 +475,7 @@ export default {
   addAdmin,
   generateQRCode,
   getUserByQRCode,
-  deleteAdmin
+  deleteAdmin,
+  checkUserEmailUsername,
+  checkPhonePrivateNumbers
 };
