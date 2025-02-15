@@ -5,12 +5,18 @@ import { AppError } from "../../utils/AppError.js";
 
 const addEditRequest = async (req, res, next) => {
     try {
-        const userId = req.user.id; // Get user ID from token
+        const userId = req.user.id;
         const { fullname, livesin, ...otherFields } = req.body;
+        const profilePicturePath = req.file ? `/uploads/users/${req.file.filename}` : null;
 
         // If no changes are requested
-        if (!fullname && !livesin && Object.keys(otherFields).length === 0) {
+        if (!fullname && !livesin && Object.keys(otherFields).length === 0 && !profilePicturePath) {
             return res.status(400).json({ message: "No changes requested" });
+        }
+
+        // Update profile picture if uploaded
+        if (profilePicturePath) {
+            await User.update({ profilepicture: profilePicturePath }, { where: { id: userId } });
         }
 
         // Update other fields directly (except fullname & livesin)
