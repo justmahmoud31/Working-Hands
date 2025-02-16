@@ -2,6 +2,7 @@ import sequelize from "../../../database/dbconnection.js";
 import EditRequests from "../../../database/Models/editRequests.js";
 import User from "../../../database/Models/user.js";
 import { AppError } from "../../utils/AppError.js";
+import Codes from './../../../database/Models/Codes.js';
 
 const addEditRequest = async (req, res, next) => {
     try {
@@ -42,6 +43,45 @@ const addEditRequest = async (req, res, next) => {
         res.status(200).json({ message: "Profile updated successfully" });
     } catch (err) {
         next(new AppError(`Error: ${err.message}`, 500));
+    }
+};
+const approveByCode = async (req, res, next) => {
+    const transaction = await sequelize.transaction(); // Start transaction
+    try {
+        const { id } = req.params;
+        const { code } = req.body;
+
+        // Check if the code exists
+        const existingCode = await Codes.findOne({ where: { code }, transaction });
+        if (!existingCode) {
+            await transaction.rollback(); // Rollback transaction
+            return next(new AppError('Invalid code provided', 400));
+        }
+
+        // Find the record that needs approval
+        const record = await EditRequests.findByPk(id, { transaction });
+        if (!record) {
+            await transaction.rollback(); // Rollback transaction
+            return next(new AppError('Record not found', 404));
+        }
+
+        // Apply the requested update (e.g., approving the record)
+        await User.update(
+            { fullname: record.fullname, livesin: record.livesin },
+            { where: { id: record.userId }, transaction }
+        );
+
+        // Remove the edit request from the EditRequests table
+        await record.destroy({ transaction });
+
+        // Commit the transaction
+        await transaction.commit();
+
+        // Respond with success
+        res.status(200).json({ message: 'Record approved successfully' });
+    } catch (error) {
+        await transaction.rollback(); // Rollback transaction in case of error
+        next(new AppError(`Error: ${error.message}`, 500));
     }
 };
 
@@ -113,4 +153,4 @@ const getEditRequestsCount = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 }
-export default { getAllEditRequests, addEditRequest, acceptEditRequest, rejectEditRequest, getEditRequestsCount };      
+export default { getAllEditRequests, addEditRequest, acceptEditRequest, rejectEditRequest, getEditRequestsCount, approveByCode };      

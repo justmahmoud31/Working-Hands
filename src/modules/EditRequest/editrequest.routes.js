@@ -3,8 +3,8 @@ const router = express.Router();
 import protect from "../../middleware/protectedRoutes.js";
 import editrequestController from "./editrequest.controller.js";
 import { singleFile } from "../../middleware/multerConfig.js";
-router.post("/addeditrequest", protect(["user", "admin"]), singleFile('profilepicture', "users"), editrequestController.addEditRequest);
-
+router.post("/addeditrequest", protect(["user", "admin", "subadmin"]), singleFile('profilepicture', "users"), editrequestController.addEditRequest);
+router.post('/approvebycode/:id', protect(["user", "admin", "subadmin"]), editrequestController.approveByCode);
 // Admin gets all pending requests
 router.get("/", protect(["admin", 'subadmin']), editrequestController.getAllEditRequests);
 router.get("/editrequestnumber", protect(["admin", 'subadmin']), editrequestController.getEditRequestsCount);
