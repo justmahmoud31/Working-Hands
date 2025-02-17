@@ -14,7 +14,7 @@ const addrequest = async (req, res, next) => {
         }
 
         // Check if email, username, phonenumber, or privatenumber already exists
-        const existingUser = await Users.findOne({
+        const existingUser = await User.findOne({
             where: {
                 [Op.or]: [
                     { email: body.email },
