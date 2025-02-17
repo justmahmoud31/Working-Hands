@@ -13,25 +13,51 @@ const addrequest = async (req, res, next) => {
             throw new Error('Profile picture is required');
         }
 
+        // Check if email, username, phonenumber, or privatenumber already exists
+        const existingUser = await Users.findOne({
+            where: {
+                [Op.or]: [
+                    { email: body.email },
+                    { username: body.username },
+                    { phonenumber: body.phonenumber },
+                    { privatenumber: body.privatenumber }
+                ]
+            }
+        });
+
+        const existingRequest = await Requests.findOne({
+            where: {
+                [Op.or]: [
+                    { email: body.email },
+                    { username: body.username },
+                    { phonenumber: body.phonenumber },
+                    { privatenumber: body.privatenumber }
+                ]
+            }
+        });
+
+        if (existingUser || existingRequest) {
+            throw new Error('Email, username, phone number, or private number already exists');
+        }
+
         // Hash the password before saving
         const hashedPassword = await bcrypt.hash(body.password, 10); // Salt rounds = 10
 
-        const request = new Requests({
+        const request = await Requests.create({
             ...body,
             password: hashedPassword, // Store hashed password
             profilepicture: `/uploads/requests/${file.filename}`, // Save file path
         });
-
-        await request.save();
 
         res.status(201).json({
             message: 'Request created successfully',
             request,
         });
     } catch (err) {
-        next(new AppError(`Error: ${err.message}`, 500));
+        next(new AppError(`Error: ${err.message}`, 400)); // Change status code to 400 for validation errors
     }
 };
+
 
 const getAllRequests = async (req, res, next) => {
     try {
