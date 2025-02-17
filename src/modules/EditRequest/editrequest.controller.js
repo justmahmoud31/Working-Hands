@@ -73,10 +73,10 @@ const approveByCode = async (req, res, next) => {
 
         // Remove the edit request from the EditRequests table
         await record.destroy({ transaction });
-        await code.update(
+        await existingCode.update(
             {
-                used: code.used + 1,
-                stock: code.stock - 1,
+                used: existingCode.used + 1,
+                stock: existingCode.stock - 1,
             },
             { transaction }
         );
