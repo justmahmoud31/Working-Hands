@@ -57,7 +57,10 @@ const approveByCode = async (req, res, next) => {
             await transaction.rollback(); // Rollback transaction
             return next(new AppError('Invalid code provided', 400));
         }
-
+        if (existingCode.stock <= 0) {
+            await transaction.rollback();
+            return next(new AppError("Code Stock Insufficient", 400));
+        }
         // Find the record that needs approval
         const record = await EditRequests.findByPk(id, { transaction });
         if (!record) {
