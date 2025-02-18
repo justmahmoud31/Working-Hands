@@ -72,7 +72,7 @@ const approveByCode = async (req, res, next) => {
 
         // Apply the requested update (e.g., approving the record)
         await User.update(
-            { fullname: record.fullname, livesin: record.livesin },
+            { fullname: record.fullname, livesin: record.livesin, birthdate: record.birthdate },
             { where: { id: record.userId }, transaction }
         );
 
@@ -120,7 +120,7 @@ const acceptEditRequest = async (req, res, next) => {
 
         // Update user profile with requested changes
         await User.update(
-            { fullname: request.fullname, livesin: request.livesin },
+            { fullname: request.fullname, livesin: request.livesin, birthdate: request.birthdate },
             { where: { id: request.userId }, transaction }
         );
 
