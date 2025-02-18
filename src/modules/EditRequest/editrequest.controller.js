@@ -7,11 +7,11 @@ import Codes from './../../../database/Models/Codes.js';
 const addEditRequest = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const { fullname, livesin, ...otherFields } = req.body;
+        const { fullname, livesin, birthdate, ...otherFields } = req.body;
         const profilePicturePath = req.file ? `/uploads/users/${req.file.filename}` : null;
 
         // If no changes are requested
-        if (!fullname && !livesin && Object.keys(otherFields).length === 0 && !profilePicturePath) {
+        if (!fullname && !livesin && !birthdate && Object.keys(otherFields).length === 0 && !profilePicturePath) {
             return res.status(400).json({ message: "No changes requested" });
         }
 
@@ -20,17 +20,18 @@ const addEditRequest = async (req, res, next) => {
             await User.update({ profilepicture: profilePicturePath }, { where: { id: userId } });
         }
 
-        // Update other fields directly (except fullname & livesin)
+        // Update other fields directly (excluding fullname, livesin, and birthdate)
         if (Object.keys(otherFields).length > 0) {
             await User.update(otherFields, { where: { id: userId } });
         }
 
-        // If fullname or livesin is changing, add an admin approval request
-        if (fullname || livesin) {
+        // If fullname, livesin, or birthdate is changing, add an admin approval request
+        if (fullname || livesin || birthdate) {
             const request = await EditRequests.create({
                 userId,
                 fullname: fullname || null,
                 livesin: livesin || null,
+                birthdate: birthdate || null,
                 status: "pending",
             });
 
@@ -45,6 +46,7 @@ const addEditRequest = async (req, res, next) => {
         next(new AppError(`Error: ${err.message}`, 500));
     }
 };
+
 const approveByCode = async (req, res, next) => {
     const transaction = await sequelize.transaction(); // Start transaction
     try {

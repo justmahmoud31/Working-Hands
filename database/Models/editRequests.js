@@ -17,14 +17,18 @@ EditRequests.init(
     },
     fullname: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     livesin: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    birthdate: {
+      type: DataTypes.DATEONLY, // Store birthdate in YYYY-MM-DD format
+      allowNull: true,
     },
     otherFields: {
-      type: DataTypes.JSON, // Stores other editable fields (except fullname, livesin)
+      type: DataTypes.JSON, // Stores other editable fields (except fullname, livesin, birthdate)
       allowNull: true,
     },
     status: {
