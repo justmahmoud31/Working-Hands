@@ -42,7 +42,7 @@ User.init(
       unique: true,
     },
     height: {
-      type: DataTypes.DECIMAL,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     weight: {
