@@ -343,7 +343,7 @@ const generateQRCode = async (req, res) => {
     }
 
     // Generate a JWT token for the user
-    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     // Generate QR code with the token
     const qrCode = qr.imageSync(token, { type: "png" });
