@@ -108,7 +108,7 @@ const getAllEditRequests = async (req, res, next) => {
     try {
         const requests = await EditRequests.findAll({
             where: { status: "pending" },
-            include: { model: User, as: "user", attributes: ["id", "fullname", "livesin", "profilepicture", "privatenumber", "phonenumber"] },
+            include: { model: User, as: "user", attributes: ["id", "fullname", "livesin", "profilepicture", "privatenumber", "phonenumber", "birthdate"] },
         });
 
         res.status(200).json({ message: "Success", requests });
