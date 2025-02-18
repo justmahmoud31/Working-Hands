@@ -56,28 +56,34 @@ const approveByCode = async (req, res, next) => {
         // Check if the code exists
         const existingCode = await Codes.findOne({ where: { code }, transaction });
         if (!existingCode) {
-            await transaction.rollback(); // Rollback transaction
+            await transaction.rollback();
             return next(new AppError('Invalid code provided', 400));
         }
         if (existingCode.stock <= 0) {
             await transaction.rollback();
             return next(new AppError("Code Stock Insufficient", 400));
         }
+
         // Find the record that needs approval
         const record = await EditRequests.findByPk(id, { transaction });
         if (!record) {
-            await transaction.rollback(); // Rollback transaction
+            await transaction.rollback();
             return next(new AppError('Record not found', 404));
         }
 
-        // Apply the requested update (e.g., approving the record)
-        await User.update(
-            { fullname: record.fullname, livesin: record.livesin, birthdate: record.birthdate },
-            { where: { id: record.userId }, transaction }
-        );
+        // Prepare updated fields
+        const updatedFields = {};
+        if (record.fullname) updatedFields.fullname = record.fullname;
+        if (record.livesin) updatedFields.livesin = record.livesin;
+        if (record.birthdate) updatedFields.birthdate = record.birthdate;
+
+        // Apply the requested update to the User table
+        await User.update(updatedFields, { where: { id: record.userId }, transaction });
 
         // Remove the edit request from the EditRequests table
         await record.destroy({ transaction });
+
+        // Update the code usage
         await existingCode.update(
             {
                 used: existingCode.used + 1,
@@ -85,6 +91,7 @@ const approveByCode = async (req, res, next) => {
             },
             { transaction }
         );
+
         // Commit the transaction
         await transaction.commit();
 
@@ -95,6 +102,7 @@ const approveByCode = async (req, res, next) => {
         next(new AppError(`Error: ${error.message}`, 500));
     }
 };
+
 
 const getAllEditRequests = async (req, res, next) => {
     try {
