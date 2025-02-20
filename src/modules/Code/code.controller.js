@@ -191,7 +191,7 @@ const acceptUserByCode = async (req, res, next) => {
                 </div>
             </div>
             `,
-            "html"
+            true // Pass 'true' to send as HTML
         );
         res.status(201).json({ message: "User accepted successfully", user });
     } catch (err) {
