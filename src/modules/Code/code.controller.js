@@ -166,21 +166,32 @@ const acceptUserByCode = async (req, res, next) => {
         await transaction.commit();
         await sendEmail(
             user.email,
-            `عزيزي المستخدم,
-        
-        يسرّنا الترحيب بك في نظام الرصد الذكي.
-        شكرًا لانضمامك إلينا، نحن سعداء بأن تكون جزءًا من مجتمعنا.
-        
-        لقد أتممت تسجيلك بنجاح، 
-        والآن يمكنك بدء استخدام النظام والاستفادة من ميزاته بكل سهولة.
-        
-        إذا احتجت إلى أي مساعدة، 
-        لا تتردد في التواصل معنا عبر الواتساب الخاص بالنظام، فنحن هنا لدعمك دائمًا.
-        
-        نتمنى لك تجربة رائعة ومثمرة مع نظام الرصد الذكي.
-        
-        مع أطيب التحيات،  
-        فريق الدعم`
+            "مرحبًا بك في نظام الرصد الذكي!",
+            `
+            <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: right; direction: rtl;">
+                <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h2 style="color: #007bff; text-align: center;">عزيزي المستخدم،</h2>
+                    <p style="color: #333; font-size: 16px; line-height: 1.8;">
+                        يسرّنا الترحيب بك في <strong>نظام الرصد الذكي</strong>.
+                        شكرًا لانضمامك إلينا، نحن سعداء بأن تكون جزءًا من مجتمعنا.
+                    </p>
+                    <p style="color: #333; font-size: 16px; line-height: 1.8;">
+                        لقد أتممت تسجيلك بنجاح، والآن يمكنك بدء استخدام النظام والاستفادة من ميزاته بكل سهولة.
+                    </p>
+                    <p style="color: #333; font-size: 16px; line-height: 1.8;">
+                        إذا احتجت إلى أي مساعدة، لا تتردد في التواصل معنا عبر 
+                        <a href="https://wa.me/9647778684131" style="color: #007bff; text-decoration: none; font-weight: bold;">واتساب</a>
+                        الخاص بالنظام، فنحن هنا لدعمك دائمًا.
+                    </p>
+                    <hr style="border: none; border-top: 1px solid #ddd;">
+                    <p style="text-align: center; color: #555; font-size: 14px;">
+                        مع أطيب التحيات،<br>
+                        <strong>فريق الدعم</strong>
+                    </p>
+                </div>
+            </div>
+            `,
+            "html"
         );
         res.status(201).json({ message: "User accepted successfully", user });
     } catch (err) {
