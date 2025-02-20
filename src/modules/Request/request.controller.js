@@ -5,6 +5,7 @@ import { AppError } from "../../utils/AppError.js";
 import bcrypt from 'bcrypt';
 import fs from 'fs/promises';
 import path from 'path';
+import sendEmail from "../../utils/sendEmail.js";
 const addrequest = async (req, res, next) => {
     try {
         const { body, file } = req;
@@ -147,7 +148,24 @@ const acceptUser = async (req, res, next) => {
 
         // 5️⃣ **Delete the request only if everything is successful**
         await request.destroy();
-
+        await sendEmail(
+            user.email,
+            `عزيزي المستخدم,
+        
+        يسرّنا الترحيب بك في نظام الرصد الذكي.
+        شكرًا لانضمامك إلينا، نحن سعداء بأن تكون جزءًا من مجتمعنا.
+        
+        لقد أتممت تسجيلك بنجاح، 
+        والآن يمكنك بدء استخدام النظام والاستفادة من ميزاته بكل سهولة.
+        
+        إذا احتجت إلى أي مساعدة، 
+        لا تتردد في التواصل معنا عبر الواتساب الخاص بالنظام، فنحن هنا لدعمك دائمًا.
+        
+        نتمنى لك تجربة رائعة ومثمرة مع نظام الرصد الذكي.
+        
+        مع أطيب التحيات،  
+        فريق الدعم`
+        );
         res.status(201).json({
             message: 'User accepted successfully',
             user,

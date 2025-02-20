@@ -343,7 +343,7 @@ const generateQRCode = async (req, res) => {
     }
 
     // Generate a JWT token for the user
-    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
     // Generate QR code with the token
     const qrCode = qr.imageSync(token, { type: "png" });
@@ -383,6 +383,18 @@ const deleteAdmin = async (req, res, next) => {
     const { id } = req.params;
     const admin = await User.findByPk(id);
     await admin.destroy();
+    res.status(201).json({
+      "Message": "Deleted"
+    })
+  } catch (err) {
+    next(new AppError(`Error: ${err.message}`, 500));
+  }
+}
+const deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id);
+    await user.destroy();
     res.status(201).json({
       "Message": "Deleted"
     })
@@ -477,5 +489,6 @@ export default {
   getUserByQRCode,
   deleteAdmin,
   checkUserEmailUsername,
-  checkPhonePrivateNumbers
+  checkPhonePrivateNumbers,
+  deleteUser
 };

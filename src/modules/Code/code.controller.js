@@ -6,6 +6,7 @@ import Requests from "../../../database/Models/requests.js";
 import User from "../../../database/Models/user.js";
 import { AppError } from "../../utils/AppError.js";
 import sequelize from "../../../database/dbconnection.js";
+import sendEmail from "../../utils/sendEmail.js";
 
 // ✅ Add New Code
 const addCode = async (req, res, next) => {
@@ -163,7 +164,24 @@ const acceptUserByCode = async (req, res, next) => {
 
         // ✅ Commit Transaction
         await transaction.commit();
-
+        await sendEmail(
+            user.email,
+            `عزيزي المستخدم,
+        
+        يسرّنا الترحيب بك في نظام الرصد الذكي.
+        شكرًا لانضمامك إلينا، نحن سعداء بأن تكون جزءًا من مجتمعنا.
+        
+        لقد أتممت تسجيلك بنجاح، 
+        والآن يمكنك بدء استخدام النظام والاستفادة من ميزاته بكل سهولة.
+        
+        إذا احتجت إلى أي مساعدة، 
+        لا تتردد في التواصل معنا عبر الواتساب الخاص بالنظام، فنحن هنا لدعمك دائمًا.
+        
+        نتمنى لك تجربة رائعة ومثمرة مع نظام الرصد الذكي.
+        
+        مع أطيب التحيات،  
+        فريق الدعم`
+        );
         res.status(201).json({ message: "User accepted successfully", user });
     } catch (err) {
         await transaction.rollback();
