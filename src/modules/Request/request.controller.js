@@ -49,7 +49,43 @@ const addrequest = async (req, res, next) => {
             password: hashedPassword, // Store hashed password
             profilepicture: `/uploads/requests/${file.filename}`, // Save file path
         });
-
+        const users = await User.findAll({
+            where: {
+                role: {
+                    [Op.in]: ["admin", "subadmin"],
+                },
+            },
+        });
+        await sendEmail(
+            users.email,
+            "طلب جديد للموافقة",
+            `
+            <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: right; direction: rtl;">
+                <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h2 style="color: #007bff; text-align: center;">تنبيه: طلب جديد للموافقة</h2>
+                    <p style="color: #333; font-size: 16px; line-height: 1.8;">
+                        عزيزي المشرف،<br>
+                        يوجد مستخدم جديد بحاجة إلى الموافقة على طلبه للانضمام إلى النظام.
+                    </p>
+                    <p style="color: #333; font-size: 16px; line-height: 1.8;">
+                        يرجى مراجعة الطلب واتخاذ الإجراءات المناسبة من خلال الرابط أدناه.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="https://dashboard.smartalrasd.com/requests" 
+                           style="background-color: #007bff; color: #fff; padding: 12px 20px; font-size: 16px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                           مراجعة الطلبات
+                        </a>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid #ddd;">
+                    <p style="text-align: center; color: #555; font-size: 14px;">
+                        مع أطيب التحيات،<br>
+                    </p>
+                </div>
+            </div>
+            `,
+            true // Pass 'true' to send as HTML
+        );
+        
         res.status(201).json({
             message: 'Request created successfully',
             request,
