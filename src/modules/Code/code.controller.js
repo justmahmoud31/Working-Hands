@@ -7,6 +7,7 @@ import User from "../../../database/Models/user.js";
 import { AppError } from "../../utils/AppError.js";
 import sequelize from "../../../database/dbconnection.js";
 import sendEmail from "../../utils/sendEmail.js";
+import CodeUsers from "../../../database/Models/CodeUsers.js";
 
 // ✅ Add New Code
 const addCode = async (req, res, next) => {
@@ -68,7 +69,7 @@ const deleteCode = async (req, res, next) => {
 
 // ✅ Accept User by Code
 const acceptUserByCode = async (req, res, next) => {
-    const transaction = await sequelize.transaction(); // Start transaction
+    const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
         const { code } = req.body;
@@ -104,7 +105,6 @@ const acceptUserByCode = async (req, res, next) => {
             },
             transaction,
         });
-
         if (existingUser) {
             await transaction.rollback();
             return res.status(400).json({ message: "User already exists with this email, username, or private number" });
@@ -124,7 +124,7 @@ const acceptUserByCode = async (req, res, next) => {
             } catch (error) {
                 console.error("🚨 Error moving file:", error);
                 await transaction.rollback();
-                return res.status(500).json({ message: "Error moving profile picture, but user was created" });
+                return res.status(500).json({ message: "Error moving profile picture." });
             }
         }
 
@@ -150,7 +150,16 @@ const acceptUserByCode = async (req, res, next) => {
             { transaction }
         );
 
-        // ✅ Update Code (Increase `used` +1, Decrease `stock` -1)
+        // ✅ Track the user-code relation
+        await CodeUsers.create(
+            {
+                codeId: existingCode.id,
+                userId: user.id,
+            },
+            { transaction }
+        );
+
+        // ✅ Update Code (Increase `used`, Decrease `stock`)
         await existingCode.update(
             {
                 used: existingCode.used + 1,
@@ -159,11 +168,13 @@ const acceptUserByCode = async (req, res, next) => {
             { transaction }
         );
 
-        // ✅ Delete Request After Success
+        // ✅ Delete Request
         await request.destroy({ transaction });
 
         // ✅ Commit Transaction
         await transaction.commit();
+
+        // ✅ Send Welcome Email
         await sendEmail(
             user.email,
             "مرحبًا بك في نظام الرصد الذكي!",
@@ -191,8 +202,9 @@ const acceptUserByCode = async (req, res, next) => {
                 </div>
             </div>
             `,
-            true // Pass 'true' to send as HTML
+            true
         );
+
         res.status(201).json({ message: "User accepted successfully", user });
     } catch (err) {
         await transaction.rollback();
@@ -200,4 +212,28 @@ const acceptUserByCode = async (req, res, next) => {
     }
 };
 
-export default { addCode, deleteCode, getAllCodes, editNumberOfCodes, acceptUserByCode };
+export const getOneCode = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const code = await Codes.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    through: { attributes: [] }, // to hide pivot table data
+                    attributes: ["id", "username", "email", "privatenumber"], // customize as needed
+                },
+            ],
+        });
+
+        if (!code) {
+            return res.status(404).json({ message: "Code not found" });
+        }
+
+        res.status(200).json({ code });
+    } catch (error) {
+        next(new AppError(`Error: ${error.message}`, 500));
+    }
+};
+
+export default { addCode, deleteCode, getAllCodes, editNumberOfCodes, acceptUserByCode, getOneCode };

@@ -8,6 +8,7 @@ import labelRoutes from './src/modules/Labels/label.routes.js';
 import editRequestsRoutes from './src/modules/EditRequest/editrequest.routes.js';
 import codeRoutes from './src/modules/Code/code.routes.js';
 import articleRoutes from './src/modules/Articls/articls.routes.js';
+import "./database/Models/associateModels.js";
 import path from 'path';
 import cors from 'cors';
 const app = express();
