@@ -6,6 +6,7 @@ import { Op } from "sequelize";
 import Requests from '../../../database/Models/requests.js';
 import sendEmail from "../../utils/sendEmail.js";
 import qr from "qr-image";
+import BwipJs from 'bwip-js';
 // Add User
 const addUser = async (req, res, next) => {
   try {
@@ -331,28 +332,37 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-const generateQRCode = async (req, res) => {
+const generateBarcode = async (req, res) => {
   try {
     const userId = req.user.id;
 
-
-    // Fetch user to ensure they exist
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate a JWT token for the user
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
-    // Generate QR code with the token
-    const qrCode = qr.imageSync(token, { type: "png" });
-
-    res.set("Content-Type", "image/png");
-    res.send(qrCode);
+    // Generate barcode (Code 128 is common)
+    BwipJs.toBuffer({
+      bcid: 'code128',        // Barcode type
+      text: token,            // Data to encode
+      scale: 3,               // 3x scaling factor
+      height: 10,             // Bar height, in millimeters
+      includetext: true,      // Show human-readable text
+      textxalign: 'center',   // Center the text
+    }, function (err, png) {
+      if (err) {
+        console.error('Error generating barcode:', err);
+        return res.status(500).json({ message: 'Barcode generation error' });
+      } else {
+        res.set('Content-Type', 'image/png');
+        res.send(png);
+      }
+    });
   } catch (error) {
-    console.error("Error generating QR code:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error('Error generating barcode:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -485,7 +495,7 @@ export default {
   searchOnUser,
   logoutUser,
   addAdmin,
-  generateQRCode,
+  generateBarcode,
   getUserByQRCode,
   deleteAdmin,
   checkUserEmailUsername,
