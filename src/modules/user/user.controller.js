@@ -343,14 +343,12 @@ const generateBarcode = async (req, res) => {
 
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
-    // Generate barcode (Code 128 is common)
     BwipJs.toBuffer({
-      bcid: 'code128',        // Barcode type
-      text: token,            // Data to encode
-      scale: 3,               // 3x scaling factor
-      height: 10,             // Bar height, in millimeters
-      includetext: true,      // Show human-readable text
-      textxalign: 'center',   // Center the text
+      bcid: 'code128',
+      text: token,
+      scale: 2,           // Reduce overall size
+      height: 40,         // Make bars taller
+      includetext: false, // Hide the text under the barcode
     }, function (err, png) {
       if (err) {
         console.error('Error generating barcode:', err);
@@ -365,6 +363,7 @@ const generateBarcode = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // Get user details by scanning QR code
 const getUserByQRCode = async (req, res) => {
