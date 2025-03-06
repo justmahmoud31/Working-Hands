@@ -1,4 +1,5 @@
 import sequelize from "../../../database/dbconnection.js";
+import CodeUsers from "../../../database/Models/CodeUsers.js";
 import EditRequests from "../../../database/Models/editRequests.js";
 import User from "../../../database/Models/user.js";
 import { AppError } from "../../utils/AppError.js";
@@ -82,7 +83,13 @@ const approveByCode = async (req, res, next) => {
 
         // Remove the edit request from the EditRequests table
         await record.destroy({ transaction });
-
+        await CodeUsers.create(
+            {
+                codeId: existingCode.id,
+                userId: record.id,
+            },
+            { transaction }
+        );
         // Update the code usage
         await existingCode.update(
             {
