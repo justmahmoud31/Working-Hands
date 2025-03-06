@@ -9,5 +9,5 @@ router.get("/", protect(["admin"]), codeController.getAllCodes);
 router.put("/editcode/:id", protect(["admin"]), codeController.editNumberOfCodes);
 router.delete("/deletecode/:id", protect(["admin"]), codeController.deleteCode);
 router.post("/acceptrequest/:id", codeController.acceptUserByCode);
-router.get('/getonecode/:id', codeController.getOneCode);
+router.get('/getonecode/:id', protect["admin"], codeController.getOneCode);
 export default router;
