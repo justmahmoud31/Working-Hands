@@ -20,7 +20,7 @@ router.post('/checkphoneprivate', userController.checkPhonePrivateNumbers);
 router.post('/logout', protect(["admin", "subadmin"]), userController.logoutUser);
 router.post('/addadmin', protect(["admin"]), userController.addAdmin);
 router.get('/getadmins', protect(['admin']), userController.getAllAdmins);
-router.get("/generate-qr", protect(["user", "admin", "subadmin"]), userController.generateBarcode);
+router.get("/generate-qr", protect(["user", "admin", "subadmin"]), userController.generateQRCode);
 router.get("/get-user/:token", userController.getUserByQRCode);
 router.delete('/deleteadmin/:id', protect(["admin"]), userController.deleteAdmin);
 router.delete('/deleteuser/:id', protect(["admin"]), userController.deleteUser);

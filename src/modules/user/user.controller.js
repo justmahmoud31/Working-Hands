@@ -6,7 +6,6 @@ import { Op } from "sequelize";
 import Requests from '../../../database/Models/requests.js';
 import sendEmail from "../../utils/sendEmail.js";
 import qr from "qr-image";
-import BwipJs from 'bwip-js';
 // Add User
 const addUser = async (req, res, next) => {
   try {
@@ -332,38 +331,30 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-const generateBarcode = async (req, res) => {
+const generateQRCode = async (req, res) => {
   try {
     const userId = req.user.id;
 
+
+    // Fetch user to ensure they exist
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Generate a JWT token for the user
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
-    BwipJs.toBuffer({
-      bcid: 'code128',
-      text: token,
-      scale: 2,           // Reduce overall size
-      height: 40,         // Make bars taller
-      includetext: false, // Hide the text under the barcode
-    }, function (err, png) {
-      if (err) {
-        console.error('Error generating barcode:', err);
-        return res.status(500).json({ message: 'Barcode generation error' });
-      } else {
-        res.set('Content-Type', 'image/png');
-        res.send(png);
-      }
-    });
+    // Generate QR code with the token
+    const qrCode = qr.imageSync(token, { type: "png" });
+
+    res.set("Content-Type", "image/png");
+    res.send(qrCode);
   } catch (error) {
-    console.error('Error generating barcode:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error generating QR code:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // Get user details by scanning QR code
 const getUserByQRCode = async (req, res) => {
@@ -494,7 +485,7 @@ export default {
   searchOnUser,
   logoutUser,
   addAdmin,
-  generateBarcode,
+  generateQRCode,
   getUserByQRCode,
   deleteAdmin,
   checkUserEmailUsername,
