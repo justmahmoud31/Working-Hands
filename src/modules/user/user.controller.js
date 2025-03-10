@@ -5,7 +5,11 @@ import bcrypt from 'bcrypt';
 import { Op } from "sequelize";
 import Requests from '../../../database/Models/requests.js';
 import sendEmail from "../../utils/sendEmail.js";
-import qr from "qr-image";
+import QRCode from 'qrcode';
+import sharp from 'sharp';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 // Add User
 const addUser = async (req, res, next) => {
   try {
@@ -331,10 +335,13 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-const generateQRCode = async (req, res) => {
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export const generateQRCode = async (req, res) => {
   try {
     const userId = req.user.id;
-
 
     // Fetch user to ensure they exist
     const user = await User.findByPk(userId);
@@ -345,18 +352,38 @@ const generateQRCode = async (req, res) => {
     // Generate a JWT token for the user
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
-    // Generate QR code with the token
-    const qrCode = qr.imageSync(token, { type: "png" });
+    // Generate QR code as a buffer
+    const qrCodeBuffer = await QRCode.toBuffer(token, {
+      type: 'png',
+      errorCorrectionLevel: 'H',
+      width: 300,
+    });
 
-    res.set("Content-Type", "image/png");
-    res.send(qrCode);
+    // Path to the logo
+    const logoPath = path.join(__dirname, '../public/logo.jpg');
+
+    // Resize the logo to fit into the QR code
+    const logoBuffer = await sharp(logoPath)
+      .resize(60, 60)
+      .toBuffer();
+
+    // Composite the logo onto the center of the QR code
+    const finalImage = await sharp(qrCodeBuffer)
+      .composite([
+        { input: logoBuffer, gravity: 'center' } // Centering the logo
+      ])
+      .png()
+      .toBuffer();
+
+    // Send the final image
+    res.set('Content-Type', 'image/png');
+    res.send(finalImage);
+
   } catch (error) {
     console.error("Error generating QR code:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// Get user details by scanning QR code
 const getUserByQRCode = async (req, res) => {
   try {
     const { token } = req.params;
