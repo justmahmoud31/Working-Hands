@@ -177,7 +177,8 @@ const loginUser = async (req, res, next) => {
     const pendingRequest = await Requests.findOne({ where: { email } });
     if (pendingRequest) {
       return res.status(403).json({
-        message: 'Your request is under review. Please wait 24-48 hours for approval.'
+        message: 'Your request is under review. Please wait 24-48 hours for approval.',
+        id: pendingRequest.id
       });
     }
     // Find user by email in the Users table
