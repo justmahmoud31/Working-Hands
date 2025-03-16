@@ -22,6 +22,14 @@ CodeUsers.init(
         key: "id",
       },
     },
+    editRequestId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "EditRequests",
+        key: "id",
+      },
+    },
   },
   {
     sequelize,

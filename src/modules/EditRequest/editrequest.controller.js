@@ -51,67 +51,80 @@ const addEditRequest = async (req, res, next) => {
 const approveByCode = async (req, res, next) => {
     const transaction = await sequelize.transaction();
     try {
-      const { id } = req.params;
-      const { code } = req.body;
-  
-      // ✅ Check if the code exists
-      const existingCode = await Codes.findOne({ where: { code }, transaction });
-      if (!existingCode) {
-        await transaction.rollback();
-        return next(new AppError('Invalid code provided', 400));
-      }
-      if (existingCode.stock <= 0) {
-        await transaction.rollback();
-        return next(new AppError("Code Stock Insufficient", 400));
-      }
-  
-      // ✅ Find the edit request
-      const record = await EditRequests.findByPk(id, { transaction });
-      if (!record) {
-        await transaction.rollback();
-        return next(new AppError('Record not found', 404));
-      }
-  
-      // ✅ Prepare fields to update
-      const updatedFields = {};
-      if (record.fullname) updatedFields.fullname = record.fullname;
-      if (record.livesin) updatedFields.livesin = record.livesin;
-      if (record.birthdate) updatedFields.birthdate = record.birthdate;
-  
-      // ✅ Update the user
-      await User.update(updatedFields, { where: { id: record.userId }, transaction });
-  
-      // ✅ Store who used the code
-      await CodeUsers.create(
-        {
-          codeId: existingCode.id,
-          userId: record.userId, // ✅ Correct: the user who made the edit request
-        },
-        { transaction }
-      );
-  
-      // ✅ Update code usage
-      await existingCode.update(
-        {
-          used: existingCode.used + 1,
-          stock: existingCode.stock - 1,
-        },
-        { transaction }
-      );
-  
-      // ✅ Delete the edit request
-      await record.destroy({ transaction });
-  
-      // ✅ Commit transaction
-      await transaction.commit();
-  
-      res.status(200).json({ message: 'Record approved successfully' });
+        const { id } = req.params;
+        const { code } = req.body;
+
+        // ✅ Check if the code exists
+        const existingCode = await Codes.findOne({ where: { code }, transaction });
+        if (!existingCode) {
+            await transaction.rollback();
+            return next(new AppError('Invalid code provided', 400));
+        }
+
+        if (existingCode.stock <= 0) {
+            await transaction.rollback();
+            return next(new AppError("Code Stock Insufficient", 400));
+        }
+
+        // ✅ Check if the code has already been used for this edit request
+        const codeUsedForRequest = await CodeUsers.findOne({
+            where: { codeId: existingCode.id, userId: id, editRequestId: id },
+            transaction,
+        });
+
+        if (codeUsedForRequest) {
+            await transaction.rollback();
+            return next(new AppError("This code has already been used for this edit request", 400));
+        }
+
+        // ✅ Find the edit request
+        const record = await EditRequests.findByPk(id, { transaction });
+        if (!record) {
+            await transaction.rollback();
+            return next(new AppError('Record not found', 404));
+        }
+
+        // ✅ Prepare fields to update
+        const updatedFields = {};
+        if (record.fullname) updatedFields.fullname = record.fullname;
+        if (record.livesin) updatedFields.livesin = record.livesin;
+        if (record.birthdate) updatedFields.birthdate = record.birthdate;
+
+        // ✅ Update the user
+        await User.update(updatedFields, { where: { id: record.userId }, transaction });
+
+        // ✅ Store who used the code for this specific request
+        await CodeUsers.create(
+            {
+                codeId: existingCode.id,
+                userId: record.userId,
+                editRequestId: id, // 👈 Track code usage per edit request
+            },
+            { transaction }
+        );
+
+        // ✅ Update code usage
+        await existingCode.update(
+            {
+                used: existingCode.used + 1,
+                stock: existingCode.stock - 1,
+            },
+            { transaction }
+        );
+
+        // ✅ Delete the edit request
+        await record.destroy({ transaction });
+
+        // ✅ Commit transaction
+        await transaction.commit();
+
+        res.status(200).json({ message: 'Record approved successfully' });
     } catch (error) {
-      await transaction.rollback();
-      next(new AppError(`Error: ${error.message}`, 500));
+        await transaction.rollback();
+        next(new AppError(`Error: ${error.message}`, 500));
     }
-  };
-  
+};
+
 
 
 const getAllEditRequests = async (req, res, next) => {
