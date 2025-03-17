@@ -24,7 +24,7 @@ CodeUsers.init(
     },
     editRequestId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: "EditRequests",
         key: "id",
