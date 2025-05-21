@@ -394,7 +394,11 @@ const getUserByQRCode = async (req, res) => {
   try {
     const { token } = req.params;
 
-    // Verify the token
+    // Safety check: block full URLs
+    if (token.includes("http")) {
+      return res.status(400).json({ message: "Invalid token format" });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.id);
 
@@ -402,13 +406,12 @@ const getUserByQRCode = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({
-      user
-    });
+    res.json({ user });
   } catch (error) {
     res.status(401).json({ message: "Invalid or expired QR code", error });
   }
 };
+
 const deleteAdmin = async (req, res, next) => {
   try {
     const { id } = req.params;
