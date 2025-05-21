@@ -340,7 +340,8 @@ export const resetPassword = async (req, res) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export const generateQRCode = async (req, res) => {
+
+const generateQRCode = async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -353,8 +354,11 @@ export const generateQRCode = async (req, res) => {
     // Generate a JWT token for the user
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
+    // Construct the full URL to be embedded in the QR code
+    const qrUrl = `https://api.smartalrasd.com/api/users/get-user/${token}`;
+
     // Generate QR code as a buffer
-    const qrCodeBuffer = await QRCode.toBuffer(token, {
+    const qrCodeBuffer = await QRCode.toBuffer(qrUrl, {
       type: 'png',
       errorCorrectionLevel: 'H',
       width: 300,
@@ -401,8 +405,6 @@ const getUserByQRCode = async (req, res) => {
       user
     });
   } catch (error) {
-
-
     res.status(401).json({ message: "Invalid or expired QR code", error });
   }
 };
