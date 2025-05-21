@@ -355,7 +355,8 @@ const generateQRCode = async (req, res) => {
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
     // Construct the full URL to be embedded in the QR code
-    const qrUrl = `https://api.smartalrasd.com/api/users/get-user/${token}`;
+    const qrUrl = `https://smartalrasd.com/scanqr?token=${token}`;
+
 
     // Generate QR code as a buffer
     const qrCodeBuffer = await QRCode.toBuffer(qrUrl, {
